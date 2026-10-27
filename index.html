@@ -325,6 +325,32 @@
   .presuRow .i{margin-left:auto; font-family:"IBM Plex Mono",monospace;}
   .presuRow select{border:1px solid var(--line); border-radius:8px; padding:3px 6px; font-size:12px; background:var(--bg); color:var(--ink);}
   @media (max-width:560px){ .hoyGrid{grid-template-columns:1fr;} .hoyTask .d{min-width:44px;} }
+  /* ===== Contactos de la ficha ===== */
+  .contRow{display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--line-soft); font-size:13px;}
+  .contRow:first-child{border-top:0;}
+  .contRow .cMain{flex:1; min-width:0;}
+  .contRow .cName{font-weight:600;}
+  .contRow .cSub{font-size:12px; color:var(--ink-soft); margin-top:2px; overflow-wrap:anywhere;}
+  .contRow .cSub a{color:var(--brand-navy);}
+  .contRow .cAct{display:flex; gap:4px; flex:none;}
+  .contRow .cAct button{font-size:11.5px; padding:4px 8px;}
+  .chip.principal{background:var(--good-soft); color:var(--good); font-weight:600;}
+  .chip.origen{background:var(--accent-soft); color:var(--brand-navy);}
+  .filterBar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px; font-size:12.5px; color:var(--ink-soft);}
+  .filterBar select{border:1px solid var(--line); border-radius:8px; padding:5px 8px; font-size:12.5px; background:var(--surface); color:var(--ink);}
+  /* ===== Embudo ===== */
+  .fnRow{display:grid; grid-template-columns:130px 1fr 70px 110px; gap:10px; align-items:center; padding:6px 0; font-size:13px;}
+  .fnBar{height:18px; border-radius:6px; background:var(--surface-2); overflow:hidden;}
+  .fnBar span{display:block; height:100%; border-radius:6px;}
+  .fnNum{font-family:"IBM Plex Mono",monospace; text-align:right;}
+  .fnKpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;}
+  .fnKpi{background:var(--surface-2); border-radius:10px; padding:10px 12px;}
+  .fnKpi .v{font-family:"Archivo Expanded",system-ui,sans-serif; font-size:20px; font-variant-numeric:tabular-nums;}
+  .fnKpi .l{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .fnTable{width:100%; min-width:0; border-collapse:collapse; font-size:12.5px;}
+  .fnTable th, .fnTable td{padding:7px 8px; border-bottom:1px solid var(--line-soft); text-align:right;}
+  .fnTable th:first-child, .fnTable td:first-child{text-align:left;}
+  @media (max-width:560px){ .fnRow{grid-template-columns:90px 1fr 46px 84px; gap:6px;} }
 </style>
 
 <div class="shell">
@@ -360,6 +386,12 @@
       <button class="tab active" data-tab="hoy" type="button">Hoy</button>
       <button class="tab" data-tab="board" type="button">Pipeline</button>
       <button class="tab" data-tab="list" type="button">Clientes</button>
+      <button class="tab" data-tab="embudo" type="button">Embudo</button>
+    </div>
+    <div class="filterBar" id="origenBar">
+      <label for="origenFilter">Origen del lead:</label>
+      <select id="origenFilter"><option value="">Todos</option></select>
+      <span id="origenCount" class="mono"></span>
     </div>
   </header>
 
@@ -367,12 +399,14 @@
 
   <section id="viewBoard" hidden><div class="board" id="board"></div></section>
 
+  <section id="viewEmbudo" hidden><div class="hoyWrap" id="embudoWrap"></div></section>
+
   <section id="viewList" hidden>
     <div class="chiprow" id="listFilterBar" style="margin-top:10px; display:none; align-items:center;"></div>
     <div class="tableWrap">
       <table>
         <thead><tr>
-          <th>Empresa</th><th>Contacto</th><th>Sector</th><th>Estado</th><th>Interés</th><th>Última act.</th><th>Alerta</th>
+          <th>Empresa</th><th>Contacto</th><th>Sector</th><th>Origen</th><th>Estado</th><th>Interés</th><th>Última act.</th><th>Alerta</th>
         </tr></thead>
         <tbody id="listBody"></tbody>
       </table>
@@ -423,9 +457,31 @@
         <div class="field"><label for="fInteres">Interés principal</label><input id="fInteres" placeholder="Kits 2-8ºC, acumuladores…"></div>
         <div class="field"><label for="fSecundario">Interés secundario</label><input id="fSecundario"></div>
         <div class="field"><label for="fProductos">Productos / referencias (separados por coma)</label><input id="fProductos" placeholder="Acumuladores ISO-FREEZE, Caja 512, FK 600…" autocomplete="off"></div>
+        <div class="field"><label for="fOrigen">Origen del lead</label><input id="fOrigen" list="origenList" placeholder="Outlook, Vibe Prospecting, Web, Feria…" autocomplete="off"></div>
       </div>
+      <datalist id="origenList"></datalist>
       <div class="field" style="margin-top:10px;"><label for="fNotas">Notas</label><textarea id="fNotas" rows="3"></textarea></div>
       <button class="btn" id="btnGuardarFicha" type="button" style="margin-top:10px;">Guardar ficha</button>
+    </div>
+
+    <div class="section" id="contSection">
+      <h3>Contactos</h3>
+      <div id="contList"></div>
+      <button class="btn" id="btnAddContacto" type="button" style="margin-top:8px;">+ Añadir contacto</button>
+      <div id="contForm" hidden class="docBox" style="margin-top:10px;">
+        <div class="grid2">
+          <div class="field"><label for="ctNombre">Nombre *</label><input id="ctNombre" autocomplete="off"></div>
+          <div class="field"><label for="ctCargo">Cargo</label><input id="ctCargo" autocomplete="off"></div>
+          <div class="field"><label for="ctEmail">Email</label><input id="ctEmail" type="email" autocomplete="off"></div>
+          <div class="field"><label for="ctTelefono">Teléfono</label><input id="ctTelefono" autocomplete="off"></div>
+          <div class="field" style="grid-column:1/-1;"><label for="ctLinkedin">LinkedIn</label><input id="ctLinkedin" placeholder="linkedin.com/in/…" autocomplete="off"></div>
+        </div>
+        <label style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:8px;"><input type="checkbox" id="ctPrincipal"> Contacto principal de la ficha</label>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button class="btn primary" id="btnGuardarContacto" type="button">Guardar contacto</button>
+          <button class="btn ghost" id="btnCancelarContacto" type="button">Cancelar</button>
+        </div>
+      </div>
     </div>
 
     <div class="section">
@@ -593,6 +649,7 @@
     <div id="nDupHint" class="dupWarn" hidden></div>
     <div class="grid2">
       <div class="field"><label for="nContacto">Contacto</label><input id="nContacto"></div>
+      <div class="field"><label for="nOrigen">Origen del lead</label><input id="nOrigen" list="origenList" value="Manual" autocomplete="off"></div>
       <div class="field"><label for="nSector">Sector</label><select id="nSector"><option>Farma</option><option>Alimentación</option><option>Logística</option><option>Retail</option><option>Laboratorio</option><option>Construcción</option><option>Otros</option></select></div>
     </div>
     <button class="btn primary" id="btnCrearCliente" type="button">Crear cliente</button>
@@ -1142,9 +1199,11 @@
   function render(){
     markSearchDirty();
     renderKpis();
+    renderOrigenControls();
     renderHoy();
     renderBoard();
     renderList();
+    renderEmbudo();
     if(activeClientId) renderPanel(activeClientId);
   }
 
@@ -1186,7 +1245,9 @@
     if(listTab) listTab.classList.add("active");
     $("viewHoy").hidden = true;
     $("viewBoard").hidden = true;
+    $("viewEmbudo").hidden = true;
     $("viewList").hidden = false;
+    $("origenBar").hidden = false;
   }
 
   function wireKpis(){
@@ -1207,7 +1268,7 @@
     var prevScroll = {}; Array.prototype.forEach.call(board.querySelectorAll(".col"), function(c){ var b=c.querySelector(".colBody"); if(b) prevScroll[c.getAttribute("data-estado")] = b.scrollTop; });
     var prevLeft = board.scrollLeft;
     board.innerHTML = ESTADOS.map(function(estado){
-      var items = clients.filter(function(c){return (c.estado||"Prospecto")===estado;});
+      var items = clients.filter(function(c){return (c.estado||"Prospecto")===estado && passOrigen(c);});
       var cards = items.map(cardHtml).join("") || '<div class="empty">Sin clientes</div>';
       return '<div class="col" data-estado="'+esc(estado)+'">'+
         '<div class="colHead"><h3><span class="dot" style="background:'+ESTADO_COLOR[estado]+'"></span>'+esc(estado)+'</h3><span class="count mono">'+items.length+'</span></div>'+
@@ -1225,8 +1286,8 @@
     var estadoOpts = ESTADOS.map(function(e){return '<option value="'+esc(e)+'"'+(e===(c.estado||"Prospecto")?" selected":"")+'>'+esc(e)+'</option>';}).join("");
     return '<div class="card" draggable="true" data-id="'+c.id+'" tabindex="0" role="button" aria-label="Abrir ficha de '+esc(c.empresa||"cliente")+'">'+
       '<div class="empresa">'+esc(c.empresa||"(sin nombre)")+'</div>'+
-      (c.contacto? '<div class="contacto">'+esc(c.contacto)+'</div>':'')+
-      '<div class="chiprow">'+(c.sector?'<span class="chip sector">'+esc(c.sector)+'</span>':'')+(c.interesPrincipal?'<span class="chip">'+esc(c.interesPrincipal)+'</span>':'')+'</div>'+
+      (c.contacto? '<div class="contacto">'+esc(c.contacto)+(contactosOf(c).length>1?' <span class="mono" style="color:var(--ink-faint)">+'+(contactosOf(c).length-1)+'</span>':'')+'</div>':'')+
+      '<div class="chiprow">'+(c.sector?'<span class="chip sector">'+esc(c.sector)+'</span>':'')+(c.origen?'<span class="chip origen">'+esc(c.origen)+'</span>':'')+(c.interesPrincipal?'<span class="chip">'+esc(c.interesPrincipal)+'</span>':'')+'</div>'+
       '<div class="cardFoot">'+badge+'</div>'+
       '<div class="cardActions" draggable="false">'+
         '<select class="cardMoveSelect" data-move-id="'+c.id+'" aria-label="Mover a otra fase">'+estadoOpts+'</select>'+
@@ -1245,7 +1306,7 @@
     }else{
       bar.style.display="none"; bar.innerHTML="";
     }
-    var filtered = clients.filter(function(c){return kpiMatches(c, kpiFilter);});
+    var filtered = clients.filter(function(c){return kpiMatches(c, kpiFilter) && passOrigen(c);});
     var rows = filtered.slice().sort(function(a,b){return (a.empresa||"").localeCompare(b.empresa||"");}).map(function(c){
       var a=alertFor(c);
       var last = lastActivityFor(c.id) || c.fechaAlta;
@@ -1253,17 +1314,163 @@
         '<td><b>'+esc(c.empresa)+'</b></td>'+
         '<td>'+esc(c.contacto||"—")+'</td>'+
         '<td><span class="chip sector">'+esc(c.sector||"—")+'</span></td>'+
+        '<td>'+(c.origen?'<span class="chip origen">'+esc(c.origen)+'</span>':'—')+'</td>'+
         '<td>'+esc(c.estado||"Prospecto")+'</td>'+
         '<td>'+esc(c.interesPrincipal||"—")+'</td>'+
         '<td class="mono">'+(last?fmtDate(last):"—")+'</td>'+
         '<td>'+(a?'<span class="badge '+a.level+'">'+esc(a.label)+'</span>':"—")+'</td>'+
       '</tr>';
     }).join("");
-    $("listBody").innerHTML = rows || '<tr><td colspan="7" class="empty">'+(kpiFilter?"Ningún cliente cumple este filtro":"Sin clientes todavía")+'</td></tr>';
+    $("listBody").innerHTML = rows || '<tr><td colspan="8" class="empty">'+(kpiFilter||origenFilter?"Ningún cliente cumple este filtro":"Sin clientes todavía")+'</td></tr>';
     Array.prototype.forEach.call(document.querySelectorAll("#listBody tr[data-id]"), function(tr){
       tr.addEventListener("click", function(){ openPanel(tr.getAttribute("data-id")); });
       tr.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPanel(tr.getAttribute("data-id")); } });
     });
+  }
+
+  // ---------- Origen del lead ----------
+  var ORIGENES_BASE = ["Manual","Outlook contactos","Vibe Prospecting","Web","Feria EMPACK","Recomendación","Documentación adjunta"];
+  var origenFilter = "";
+  function origenOf(c){ return (c && c.origen) ? String(c.origen) : "Sin origen"; }
+  function origenesList(){
+    var set = {}; ORIGENES_BASE.forEach(function(o){ set[o]=1; });
+    clients.forEach(function(c){ if(c.origen) set[c.origen]=1; });
+    return Object.keys(set);
+  }
+  function passOrigen(c){ return !origenFilter || origenOf(c)===origenFilter; }
+  function renderOrigenControls(){
+    var sel = $("origenFilter"); if(!sel) return;
+    var counts = {}; clients.forEach(function(c){ var o=origenOf(c); counts[o]=(counts[o]||0)+1; });
+    var opts = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; });
+    if(origenFilter && opts.indexOf(origenFilter)<0) opts.push(origenFilter);
+    sel.innerHTML = '<option value="">Todos ('+clients.length+')</option>' + opts.map(function(o){ return '<option value="'+esc(o)+'"'+(o===origenFilter?' selected':'')+'>'+esc(o)+' ('+(counts[o]||0)+')</option>'; }).join("");
+    $("origenCount").textContent = origenFilter ? "Filtrando: "+(counts[origenFilter]||0)+" fichas" : "";
+    var dl = $("origenList"); if(dl) dl.innerHTML = origenesList().map(function(o){ return '<option value="'+esc(o)+'">'; }).join("");
+  }
+
+  // ---------- Contactos de la ficha ----------
+  var contEditIdx = -1;
+  function contactosOf(c){
+    if(Array.isArray(c.contactos) && c.contactos.length) return c.contactos;
+    if(c.contacto || c.email || c.telefono) return [{nombre:c.contacto||"", cargo:c.cargo||"", email:c.email||"", telefono:c.telefono||"", linkedin:"", principal:true}];
+    return [];
+  }
+  function linkHref(u){ u = String(u||"").trim(); if(!u) return ""; return /^https?:\/\//i.test(u) ? u : "https://"+u; }
+  function renderContactos(c){
+    var list = contactosOf(c);
+    $("contList").innerHTML = list.length ? list.map(function(k,i){
+      var sub = [k.cargo, k.email ? '<a href="mailto:'+esc(k.email)+'">'+esc(k.email)+'</a>' : "", k.telefono ? '<a href="tel:'+esc(String(k.telefono).replace(/\s+/g,""))+'">'+esc(k.telefono)+'</a>' : "",
+        k.linkedin ? '<a href="'+esc(linkHref(k.linkedin))+'" target="_blank" rel="noopener">LinkedIn</a>' : ""].filter(Boolean);
+      return '<div class="contRow"><div class="cMain"><div class="cName">'+esc(k.nombre||"(sin nombre)")+(k.principal?' <span class="chip principal">Principal</span>':'')+'</div>'+
+        '<div class="cSub">'+(sub.length ? sub.map(function(x){ return /^</.test(x)?x:esc(x); }).join(" · ") : "Sin datos de contacto")+'</div></div>'+
+        '<div class="cAct">'+(!k.principal?'<button class="btn ghost" type="button" data-cont-main="'+i+'">Principal</button>':'')+
+        '<button class="btn ghost" type="button" data-cont-edit="'+i+'">Editar</button><button class="btn ghost" type="button" data-cont-del="'+i+'" aria-label="Eliminar '+esc(k.nombre||"contacto")+'">✕</button></div></div>';
+    }).join("") : '<div class="empty" style="text-align:left; padding:6px 0;">Sin contactos. Añade el primero.</div>';
+  }
+  function principalFields(list){
+    var p = list.find(function(k){ return k.principal; }) || list[0];
+    if(!p) return {};
+    return {contacto:p.nombre||"", cargo:p.cargo||"", email:p.email||"", telefono:p.telefono||""};
+  }
+  async function saveContactos(list){
+    var c = clients.find(function(x){ return x.id===activeClientId; }); if(!c) return;
+    if(list.length && !list.some(function(k){ return k.principal; })) list[0].principal = true;
+    var patch = Object.assign({contactos:list}, principalFields(list));
+    var emails = Array.isArray(c.emails) ? c.emails.slice() : [];
+    list.forEach(function(k){ var e=String(k.email||"").trim().toLowerCase(); if(e && emails.map(function(x){return String(x).toLowerCase();}).indexOf(e)<0) emails.push(e); });
+    patch.emails = emails;
+    await db.collection("clients").doc(activeClientId).update(patch);
+  }
+  function openContForm(idx){
+    var c = clients.find(function(x){ return x.id===activeClientId; }); if(!c) return;
+    var list = contactosOf(c), k = idx>=0 ? list[idx] : {};
+    contEditIdx = idx;
+    $("ctNombre").value=k.nombre||""; $("ctCargo").value=k.cargo||""; $("ctEmail").value=k.email||""; $("ctTelefono").value=k.telefono||""; $("ctLinkedin").value=k.linkedin||"";
+    $("ctPrincipal").checked = idx>=0 ? !!k.principal : !list.length;
+    $("contForm").hidden=false; $("ctNombre").focus();
+  }
+  function wireContactos(){
+    $("btnAddContacto").addEventListener("click", function(){ openContForm(-1); });
+    $("btnCancelarContacto").addEventListener("click", function(){ $("contForm").hidden=true; contEditIdx=-1; });
+    $("btnGuardarContacto").addEventListener("click", async function(){
+      var c = clients.find(function(x){ return x.id===activeClientId; }); if(!c) return;
+      var nombre = $("ctNombre").value.trim(); if(!nombre){ toast("Escribe el nombre del contacto."); return; }
+      var list = contactosOf(c).map(function(k){ return Object.assign({}, k); });
+      var item = {nombre:nombre, cargo:$("ctCargo").value.trim(), email:$("ctEmail").value.trim(), telefono:$("ctTelefono").value.trim(), linkedin:$("ctLinkedin").value.trim(), principal:$("ctPrincipal").checked};
+      if(item.principal) list.forEach(function(k){ k.principal=false; });
+      if(contEditIdx>=0) list[contEditIdx]=item; else list.push(item);
+      var btn=this; btn.disabled=true;
+      try{ await saveContactos(list); $("contForm").hidden=true; contEditIdx=-1; toast("Contacto guardado."); }
+      catch(e){ toast("No se pudo guardar el contacto."); }
+      finally{ btn.disabled=false; }
+    });
+    $("contList").addEventListener("click", async function(e){
+      var c = clients.find(function(x){ return x.id===activeClientId; }); if(!c) return;
+      var list = contactosOf(c).map(function(k){ return Object.assign({}, k); });
+      var ed = e.target.closest("[data-cont-edit]"); if(ed){ openContForm(+ed.getAttribute("data-cont-edit")); return; }
+      var mn = e.target.closest("[data-cont-main]");
+      if(mn){ var i=+mn.getAttribute("data-cont-main"); list.forEach(function(k,j){ k.principal = j===i; });
+        try{ await saveContactos(list); toast("Contacto principal actualizado."); }catch(err){ toast("No se pudo actualizar."); } return; }
+      var dl = e.target.closest("[data-cont-del]");
+      if(dl){ var d=+dl.getAttribute("data-cont-del"); if(!confirm("¿Eliminar a "+(list[d].nombre||"este contacto")+" de la ficha?")) return;
+        list.splice(d,1);
+        try{ await saveContactos(list); toast("Contacto eliminado."); }catch(err){ toast("No se pudo eliminar."); } }
+    });
+  }
+
+  // ---------- Panel de embudo ----------
+  function num(v){ if(v==null||v==="") return 0; if(typeof v==="number") return v; var n=parseFloat(String(v).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",", ".")); return isNaN(n)?0:n; }
+  function eur0(n){ return (n||0).toLocaleString("es-ES",{maximumFractionDigits:0, useGrouping:"always"})+" €"; }
+  function pct(a,b){ return b ? Math.round(a*100/b)+" %" : "—"; }
+  function renderEmbudo(){
+    var wrap = $("embudoWrap"); if(!wrap || $("viewEmbudo").hidden) return;
+    var cl = clients.filter(passOrigen);
+    var ids = {}; cl.forEach(function(c){ ids[c.id]=c; });
+    var pr = presupuestos.filter(function(p){ return ids[p.clientId]; });
+    var ABIERTO = {"Borrador":1,"Enviado":1};
+    // 1) Embudo por estado
+    var maxN = 1, rows = ESTADOS.map(function(e){
+      var cs = cl.filter(function(c){ return (c.estado||"Prospecto")===e; });
+      var csIds = {}; cs.forEach(function(c){ csIds[c.id]=1; });
+      var val = pr.filter(function(p){ return csIds[p.clientId] && ABIERTO[p.estado||"Borrador"]; }).reduce(function(s,p){ return s+num(p.importe); },0);
+      maxN = Math.max(maxN, cs.length);
+      return {e:e, n:cs.length, val:val};
+    });
+    var fnHtml = rows.map(function(r){
+      return '<div class="fnRow"><span>'+esc(r.e)+'</span><div class="fnBar"><span style="width:'+Math.max(2, Math.round(r.n*100/maxN))+'%; background:'+ESTADO_COLOR[r.e]+'"></span></div><span class="fnNum">'+r.n+'</span><span class="fnNum">'+(r.val?eur0(r.val):"—")+'</span></div>';
+    }).join("");
+    // 2) Presupuestos
+    var by = {}; PRESU_ESTADOS.forEach(function(e){ by[e]={n:0,v:0}; });
+    pr.forEach(function(p){ var e=p.estado||"Borrador"; if(!by[e]) by[e]={n:0,v:0}; by[e].n++; by[e].v+=num(p.importe); });
+    var cerrados = by["Aceptado"].n + by["Rechazado"].n + by["Caducado"].n;
+    var enCurso = by["Borrador"].v + by["Enviado"].v;
+    var kp = [
+      [eur0(enCurso), "Valor en curso (borrador + enviado, sin IVA)"],
+      [pct(by["Aceptado"].n, cerrados), "Tasa de éxito (aceptados / cerrados)"],
+      [pct(by["Aceptado"].n, pr.length), "Aceptados sobre el total"],
+      [eur0(by["Aceptado"].v), "Importe aceptado"],
+      [String(by["Enviado"].n), "Enviados esperando respuesta"]
+    ].map(function(k){ return '<div class="fnKpi"><div class="v">'+k[0]+'</div><div class="l">'+esc(k[1])+'</div></div>'; }).join("");
+    var prRows = PRESU_ESTADOS.map(function(e){ return '<tr><td>'+esc(e)+'</td><td>'+by[e].n+'</td><td>'+eur0(by[e].v)+'</td></tr>'; }).join("");
+    // 3) Por sector y 4) por origen
+    function grupo(keyFn){
+      var g = {};
+      cl.forEach(function(c){ var k=keyFn(c); g[k]=g[k]||{c:0,act:0,neg:0,p:0,pa:0,va:0}; g[k].c++; if(c.estado==="Cliente Activo") g[k].act++; if(c.estado==="Negociación"||c.estado==="Cierre") g[k].neg++; });
+      pr.forEach(function(p){ var k=keyFn(ids[p.clientId]); if(!g[k]) return; g[k].p++; if(p.estado==="Aceptado"){ g[k].pa++; g[k].va+=num(p.importe); } });
+      return Object.keys(g).sort(function(a,b){ return g[b].c-g[a].c; }).map(function(k){ var x=g[k];
+        return '<tr><td>'+esc(k)+'</td><td>'+x.c+'</td><td>'+x.neg+'</td><td>'+x.act+'</td><td>'+pct(x.act,x.c)+'</td><td>'+x.p+'</td><td>'+x.pa+'</td><td>'+eur0(x.va)+'</td></tr>'; }).join("");
+    }
+    var head = '<tr><th></th><th>Fichas</th><th>Negoc./Cierre</th><th>Activos</th><th>Conversión</th><th>Presup.</th><th>Aceptados</th><th>€ aceptado</th></tr>';
+    wrap.innerHTML =
+      '<div class="hoyHead"><h2>Embudo comercial</h2><span class="meta">'+(origenFilter?'Origen: '+esc(origenFilter)+' · ':'')+cl.length+' fichas · '+pr.length+' presupuestos</span></div>'+
+      '<div class="hoyGrid">'+
+        '<div class="hoyBox"><h3>Fichas por estado <span class="count">nº · € abierto</span></h3>'+fnHtml+'</div>'+
+        '<div class="hoyBox"><h3>Presupuestos</h3><div class="fnKpis">'+kp+'</div>'+
+          '<table class="fnTable" style="margin-top:10px;"><tr><th>Estado</th><th>Nº</th><th>Importe</th></tr>'+prRows+'</table></div>'+
+      '</div>'+
+      '<div class="hoyBox"><h3>Conversión por sector</h3><div style="overflow-x:auto;"><table class="fnTable">'+head+grupo(function(c){ return c.sector||"Sin sector"; })+'</table></div></div>'+
+      '<div class="hoyBox"><h3>Conversión por origen del lead</h3><div style="overflow-x:auto;"><table class="fnTable">'+head+grupo(origenOf)+'</table></div></div>'+
+      '<div class="hoyEmpty">Conversión = fichas en «Cliente Activo» sobre el total del grupo. Importes sin IVA, según los presupuestos registrados.</div>';
   }
 
   function renderPanel(clientId){
@@ -1275,7 +1482,9 @@
     $("fEmpresa").value=c.empresa||"";
     $("fContacto").value=c.contacto||""; $("fCargo").value=c.cargo||""; $("fEmail").value=c.email||"";
     $("fTelefono").value=c.telefono||""; $("fDireccion").value=c.direccion||""; $("fSector").value=c.sector||"Farma"; $("fEstado").value=c.estado||"Prospecto";
-    $("fInteres").value=c.interesPrincipal||""; $("fSecundario").value=c.interesSecundario||""; $("fProductos").value=(Array.isArray(c.productos)?c.productos:[]).join(", "); $("fNotas").value=c.notas||"";
+    $("fInteres").value=c.interesPrincipal||""; $("fSecundario").value=c.interesSecundario||""; $("fProductos").value=(Array.isArray(c.productos)?c.productos:[]).join(", "); $("fNotas").value=c.notas||""; $("fOrigen").value=c.origen||"";
+    $("pChips").innerHTML += c.origen ? '<span class="chip origen">'+esc(c.origen)+'</span>' : '';
+    renderContactos(c);
 
     renderResumen(c);
 
@@ -1557,6 +1766,7 @@
 
   // ---------- panel open/close ----------
   function openPanel(id){
+    $("contForm").hidden=true; contEditIdx=-1;
     activeClientId=id; fileFilter=""; renderPanel(id);
     $("scrim").classList.add("show"); $("panel").classList.add("show");
   }
@@ -1665,6 +1875,9 @@
         $("viewHoy").hidden = which!=="hoy";
         $("viewBoard").hidden = which!=="board";
         $("viewList").hidden = which!=="list";
+        $("viewEmbudo").hidden = which!=="embudo";
+        $("origenBar").hidden = which==="hoy";
+        if(which==="embudo") renderEmbudo();
       });
     });
     $("scrim").addEventListener("click", closePanel);
@@ -1678,7 +1891,9 @@
       Array.prototype.forEach.call(document.querySelectorAll(".modalScrim.show"), function(m){ m.classList.remove("show"); });
     });
 
-    $("btnNewClient").addEventListener("click", function(){ $("nEmpresa").value=""; $("nContacto").value=""; newDupAck=false; renderNewDup([]); openModal("modalNew"); });
+    wireContactos();
+    $("origenFilter").addEventListener("change", function(){ origenFilter=this.value; renderOrigenControls(); renderBoard(); renderList(); renderEmbudo(); });
+    $("btnNewClient").addEventListener("click", function(){ $("nEmpresa").value=""; $("nContacto").value=""; $("nOrigen").value="Manual"; newDupAck=false; renderNewDup([]); openModal("modalNew"); });
     $("nEmpresa").addEventListener("input", function(){ newDupAck=false; renderNewDup(findSimilarClients($("nEmpresa").value, "")); });
     $("nDupHint").addEventListener("click", function(e){
       var b = e.target.closest("[data-open-client]");
@@ -1693,7 +1908,9 @@
       if(top>=4){ renderNewDup(sim); toast("Ya existe un cliente con ese nombre."); return; }
       if(top>=3 && !newDupAck){ newDupAck=true; renderNewDup(sim); toast("Se parece a un cliente existente. Revísalo o pulsa de nuevo para crearlo."); return; }
       try{
-        var id = await createClient({empresa:empresa, contacto:$("nContacto").value.trim(), sector:$("nSector").value, estado:"Prospecto"});
+        var nc = $("nContacto").value.trim();
+        var id = await createClient({empresa:empresa, contacto:nc, sector:$("nSector").value, estado:"Prospecto", origen:$("nOrigen").value.trim()||"Manual",
+          contactos: nc ? [{nombre:nc, cargo:"", email:"", telefono:"", linkedin:"", principal:true}] : []});
         closeModal("modalNew"); toast("Cliente creado."); openPanel(id);
       }catch(e){ toast("No se pudo crear el cliente."); }
     });
@@ -1732,7 +1949,14 @@
       if(otros.length){ toast("Ya existe otro cliente con ese nombre. Si es el mismo, usa «Unificar con otro cliente»."); return; }
       var patch={empresa:nuevoNombre, contacto:$("fContacto").value.trim(), cargo:$("fCargo").value.trim(), email:$("fEmail").value.trim(),
         telefono:$("fTelefono").value.trim(), direccion:$("fDireccion").value.trim(), sector:$("fSector").value, estado:$("fEstado").value,
-        interesPrincipal:$("fInteres").value.trim(), interesSecundario:$("fSecundario").value.trim(), productos:parseTags($("fProductos").value), notas:$("fNotas").value.trim()};
+        interesPrincipal:$("fInteres").value.trim(), interesSecundario:$("fSecundario").value.trim(), productos:parseTags($("fProductos").value), notas:$("fNotas").value.trim(), origen:$("fOrigen").value.trim()};
+      var cAct = clients.find(function(x){ return x.id===activeClientId; });
+      if(cAct && Array.isArray(cAct.contactos) && cAct.contactos.length){
+        var cl2 = cAct.contactos.map(function(k){ return Object.assign({}, k); }), pi = cl2.findIndex(function(k){ return k.principal; });
+        if(pi<0) pi = 0;
+        cl2[pi] = Object.assign(cl2[pi], {nombre:patch.contacto, cargo:patch.cargo, email:patch.email, telefono:patch.telefono, principal:true});
+        patch.contactos = cl2;
+      }
       try{ await db.collection("clients").doc(activeClientId).update(patch); $("pEmpresa").textContent=nuevoNombre; toast("Ficha guardada."); }
       catch(e){ toast("No se pudo guardar."); }
     });
@@ -2191,6 +2415,8 @@
       var e = by[c.id], L = [];
       ent(L,"Ficha · nombre",3,"all",c.empresa); ent(L,"Ficha · contacto",2,"all",c.contacto); ent(L,"Ficha · cargo",1,"all",c.cargo);
       ent(L,"Ficha · email",1,"all",c.email);
+      ent(L,"Ficha · origen",1,"all",c.origen);
+      (Array.isArray(c.contactos)?c.contactos:[]).forEach(function(k){ ent(L,"Contacto",2,"all",[k.nombre,k.cargo,k.email,k.telefono].filter(Boolean).join(" · ")); });
       if(c.telefono){ ent(L,"Ficha · teléfono",1,"all",c.telefono+" "+String(c.telefono).replace(/\D+/g,"")); }
       ent(L,"Ficha · dirección",1,"all",c.direccion); ent(L,"Ficha · sector",1,"all",c.sector); ent(L,"Ficha · estado",1,"all",c.estado);
       var tags = Array.isArray(c.productos) ? c.productos.join(", ") : "";
@@ -3097,7 +3323,7 @@
       if(!(await ensureAssets())){ toast("Adjuntar documentos no está disponible ahora mismo. Recarga la página."); return; }
       btn.disabled = true; $("thinking").hidden = false;
       try{
-        if(clientId==="__new__") clientId = await createClient({empresa:$("aoNombre").value.trim(), estado:"Prospecto"});
+        if(clientId==="__new__") clientId = await createClient({empresa:$("aoNombre").value.trim(), estado:"Prospecto", origen:"Documentación adjunta"});
         var names = attFiles.map(function(a){return a.file.name;});
         var res = await saveAttachments(clientId, true);
         var pasted = $("emailText").value.trim();
@@ -3225,7 +3451,7 @@
         if(sel==="__new__"){
           clientId = await createClient({
             empresa:$("exNombre").value.trim(), contacto:d.contacto||"", cargo:d.cargo||"",
-            email:d.email||"", telefono:d.telefono||"", direccion:d.direccion||"", sector:d.sector||"", estado:d.estadoSugerido||"Prospecto", productos:prodNew
+            email:d.email||"", telefono:d.telefono||"", direccion:d.direccion||"", sector:d.sector||"", estado:d.estadoSugerido||"Prospecto", productos:prodNew, origen:"Documentación adjunta", contactos:(d.contacto||d.email)?[{nombre:d.contacto||"", cargo:d.cargo||"", email:d.email||"", telefono:d.telefono||"", linkedin:"", principal:true}]:[]
           });
         } else {
           var existing = clients.find(function(x){return x.id===clientId;}) || {};

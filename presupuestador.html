@@ -1221,6 +1221,40 @@ function exportExcel(){
     toast('Presupuesto vinculado a ' + (c.empresa || 'cliente'));
   }
 
+  /* ---------- PDF del presupuesto ---------- */
+  var PDF_LIBS = {h2c: ['https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', 'html2canvas'],
+                  jspdf: ['https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js', 'jspdf']};
+  var libP = {};
+  function loadLib(k){
+    var u = PDF_LIBS[k][0], g = PDF_LIBS[k][1];
+    if (window[g]) return Promise.resolve(window[g]);
+    if (libP[k]) return libP[k];
+    libP[k] = new Promise(function(res, rej){ var sc = document.createElement('script'); sc.src = u; sc.async = true;
+      sc.onload = function(){ window[g] ? res(window[g]) : rej(new Error('lib')); }; sc.onerror = function(){ delete libP[k]; rej(new Error('lib')); };
+      document.head.appendChild(sc); });
+    return libP[k];
+  }
+  async function makePdf(){
+    var h2c = await loadLib('h2c'), J = await loadLib('jspdf');
+    var html = docPages(false);
+    var host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-10000px;top:0;width:210mm;background:#fff;z-index:-1';
+    document.body.appendChild(host);
+    try {
+      var pdf = new J.jsPDF({unit: 'mm', format: 'a4', orientation: 'portrait', compress: true});
+      for (var i = 0; i < html.length; i++){
+        var pg = document.createElement('div'); pg.className = 'page'; pg.style.boxShadow = 'none'; pg.style.transform = 'none'; pg.innerHTML = html[i];
+        host.innerHTML = ''; host.appendChild(pg);
+        var cv = await h2c(pg, {scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false});
+        var w = 210, h = cv.height * 210 / cv.width;
+        if (h > 297){ w = 297 * cv.width / cv.height; h = 297; }
+        if (i > 0) pdf.addPage();
+        pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', (210 - w) / 2, 0, w, h);
+      }
+      return pdf.output('blob');
+    } finally { host.remove(); }
+  }
+
   /* ---------- guardar / enviar ---------- */
   function resumenPiezas(Q){
     var n = S.piezas.map(function(p){ return p.nombre || p.ref; }).filter(Boolean);
@@ -1249,7 +1283,14 @@ function exportExcel(){
         empresaEmisora: S.empresas[S.empresa].nombre, descripcion: resumenPiezas(Q), lineas: lineas,
         validoHasta: masDias(N(S.validez) || 30), docAssetId: assetId, origen: 'Presupuestador Espumas V10', app: snap,
         actualizadoPor: quien(), actualizadoEn: nowIso()};
-      var oldAsset = P.docAssetId;
+      var oldAsset = P.docAssetId, oldPdf = P.pdfAssetId, pdfId = '', pdfBlob = null;
+      try {
+        pdfBlob = await makePdf();
+        pdfId = rid(24, 'abcdef0123456789');
+        var upP = await sb.storage.from(BUCKET).upload(pdfId, pdfBlob, {contentType: 'application/pdf', upsert: false});
+        if (upP.error) throw upP.error;
+        data.pdfAssetId = pdfId;
+      } catch(ePdf){ pdfId = ''; pdfBlob = null; toast('No se pudo generar el PDF; se guarda solo el Word'); }
       if (!P.presuId){
         var id = rid(20);
         data.estado = 'Borrador'; data.fecha = hoy(); data.createdAt = nowIso(); data.creadoPor = quien();
@@ -1270,10 +1311,24 @@ function exportExcel(){
         P.fileRowId = fid;
         await patchDoc('presupuestos', P.presuId, {fileRowId: fid});
       }
+      if (pdfId){
+        var pdfData = {clientId: P.clientId, name: w.name.replace(/\.doc$/, '.pdf'), assetId: pdfId, categoria: 'Presupuesto', contentType: 'application/pdf',
+          sizeBytes: pdfBlob.size, presupuestoId: P.presuId, subidoPor: quien()};
+        if (P.pdfFileRowId){ await patchDoc('files', P.pdfFileRowId, pdfData); }
+        else {
+          var pfid = rid(20); pdfData.createdAt = nowIso();
+          var pfi = await sb.from('docs').insert({col: 'files', id: pfid, data: pdfData});
+          if (pfi.error) throw pfi.error;
+          P.pdfFileRowId = pfid;
+          await patchDoc('presupuestos', P.presuId, {pdfFileRowId: pfid});
+        }
+        if (oldPdf && oldPdf !== pdfId){ try { await sb.storage.from(BUCKET).remove([oldPdf]); } catch(e){} }
+        P.pdfAssetId = pdfId;
+      }
       if (oldAsset && oldAsset !== assetId){ try { await sb.storage.from(BUCKET).remove([oldAsset]); } catch(e){} }
       P.docAssetId = assetId;
       save();
-      if (!silencioso) toast('Guardado en el Pipeline: presupuesto ' + S.numero + ' y su Word en la ficha del cliente');
+      if (!silencioso) toast('Guardado en el Pipeline: presupuesto ' + S.numero + (P.pdfAssetId ? ', Word y PDF' : ' y su Word') + ' en la ficha del cliente');
       return true;
     } catch(e){
       toast('No se pudo guardar en el Pipeline');
@@ -1289,7 +1344,7 @@ function exportExcel(){
       await patchDoc('presupuestos', P.presuId, {estado: 'Enviado', fecha: hoy(), enviadoA: P.email || '', estadoCambiadoPor: quien(), estadoCambiadoEn: nowIso()});
       P.estado = 'Enviado'; save(); render();
       toast('Marcado como enviado. Seguimiento creado en el Pipeline.');
-      if (P.email && confirm('¿Abrir un correo para ' + P.email + '? Recuerda adjuntar el Word o el PDF (Outlook no permite adjuntarlo automáticamente desde la web).')){
+      if (P.email && confirm('¿Abrir un correo para ' + P.email + '? Recuerda adjuntar el PDF (lo tienes en la ficha del cliente) (Outlook no permite adjuntarlo automáticamente desde la web).')){
         var asunto = 'Presupuesto ' + S.numero + ' · ' + S.empresas[S.empresa].nombre;
         var cuerpo = 'Buenos días' + (P.contacto ? ' ' + P.contacto.split(' ')[0] : '') + ',\n\nAdjunto le remito nuestro presupuesto nº ' + S.numero + '.\n\nQuedo a su disposición para cualquier aclaración.\n\nUn saludo,\n' + quien();
         location.href = 'mailto:' + encodeURIComponent(P.email) + '?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo);
@@ -1309,7 +1364,7 @@ function exportExcel(){
     }
     var c = await datosCliente(d.clientId, '') || {};
     S.pipe = {clientId: d.clientId, empresa: c.empresa || '', contacto: c.contacto || '', email: c.email || '',
-      presuId: id, estado: d.estado || 'Borrador', docAssetId: d.docAssetId || '', fileRowId: d.fileRowId || ''};
+      presuId: id, estado: d.estado || 'Borrador', docAssetId: d.docAssetId || '', fileRowId: d.fileRowId || '', pdfAssetId: d.pdfAssetId || '', pdfFileRowId: d.pdfFileRowId || ''};
     renderLeft(); update(); render();
     toast('Presupuesto ' + (d.numero || '') + ' abierto desde el Pipeline');
   }
