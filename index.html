@@ -474,7 +474,8 @@
           <div class="field"><label for="ctCargo">Cargo</label><input id="ctCargo" autocomplete="off"></div>
           <div class="field"><label for="ctEmail">Email</label><input id="ctEmail" type="email" autocomplete="off"></div>
           <div class="field"><label for="ctTelefono">Teléfono</label><input id="ctTelefono" autocomplete="off"></div>
-          <div class="field" style="grid-column:1/-1;"><label for="ctLinkedin">LinkedIn</label><input id="ctLinkedin" placeholder="linkedin.com/in/…" autocomplete="off"></div>
+          <div class="field"><label for="ctMovil">Móvil</label><input id="ctMovil" autocomplete="off"></div>
+          <div class="field"><label for="ctLinkedin">LinkedIn</label><input id="ctLinkedin" placeholder="linkedin.com/in/…" autocomplete="off"></div>
         </div>
         <label style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:8px;"><input type="checkbox" id="ctPrincipal"> Contacto principal de la ficha</label>
         <div style="display:flex; gap:8px; margin-top:10px;">
@@ -1360,8 +1361,9 @@
     var list = contactosOf(c);
     $("contList").innerHTML = list.length ? list.map(function(k,i){
       var sub = [k.cargo, k.email ? '<a href="mailto:'+esc(k.email)+'">'+esc(k.email)+'</a>' : "", k.telefono ? '<a href="tel:'+esc(String(k.telefono).replace(/\s+/g,""))+'">'+esc(k.telefono)+'</a>' : "",
+        k.movil && k.movil!==k.telefono ? '<a href="tel:'+esc(String(k.movil).replace(/\s+/g,""))+'">'+esc(k.movil)+'</a>' : "",
         k.linkedin ? '<a href="'+esc(linkHref(k.linkedin))+'" target="_blank" rel="noopener">LinkedIn</a>' : ""].filter(Boolean);
-      return '<div class="contRow"><div class="cMain"><div class="cName">'+esc(k.nombre||"(sin nombre)")+(k.principal?' <span class="chip principal">Principal</span>':'')+'</div>'+
+      return '<div class="contRow"><div class="cMain"><div class="cName">'+esc(k.nombre||"(sin nombre)")+(k.principal?' <span class="chip principal">Principal</span>':'')+(k.origen?' <span class="chip origen" title="Alta automática'+(k.alta?' el '+esc(String(k.alta).slice(0,10)):'')+'">Auto · '+esc(k.origen)+'</span>':'')+'</div>'+
         '<div class="cSub">'+(sub.length ? sub.map(function(x){ return /^</.test(x)?x:esc(x); }).join(" · ") : "Sin datos de contacto")+'</div></div>'+
         '<div class="cAct">'+(!k.principal?'<button class="btn ghost" type="button" data-cont-main="'+i+'">Principal</button>':'')+
         '<button class="btn ghost" type="button" data-cont-edit="'+i+'">Editar</button><button class="btn ghost" type="button" data-cont-del="'+i+'" aria-label="Eliminar '+esc(k.nombre||"contacto")+'">✕</button></div></div>';
@@ -1370,7 +1372,7 @@
   function principalFields(list){
     var p = list.find(function(k){ return k.principal; }) || list[0];
     if(!p) return {};
-    return {contacto:p.nombre||"", cargo:p.cargo||"", email:p.email||"", telefono:p.telefono||""};
+    return {contacto:p.nombre||"", cargo:p.cargo||"", email:p.email||"", telefono:p.telefono||p.movil||""};
   }
   async function saveContactos(list){
     var c = clients.find(function(x){ return x.id===activeClientId; }); if(!c) return;
@@ -1385,7 +1387,7 @@
     var c = clients.find(function(x){ return x.id===activeClientId; }); if(!c) return;
     var list = contactosOf(c), k = idx>=0 ? list[idx] : {};
     contEditIdx = idx;
-    $("ctNombre").value=k.nombre||""; $("ctCargo").value=k.cargo||""; $("ctEmail").value=k.email||""; $("ctTelefono").value=k.telefono||""; $("ctLinkedin").value=k.linkedin||"";
+    $("ctNombre").value=k.nombre||""; $("ctCargo").value=k.cargo||""; $("ctEmail").value=k.email||""; $("ctTelefono").value=k.telefono||""; $("ctMovil").value=k.movil||""; $("ctLinkedin").value=k.linkedin||"";
     $("ctPrincipal").checked = idx>=0 ? !!k.principal : !list.length;
     $("contForm").hidden=false; $("ctNombre").focus();
   }
@@ -1396,7 +1398,7 @@
       var c = clients.find(function(x){ return x.id===activeClientId; }); if(!c) return;
       var nombre = $("ctNombre").value.trim(); if(!nombre){ toast("Escribe el nombre del contacto."); return; }
       var list = contactosOf(c).map(function(k){ return Object.assign({}, k); });
-      var item = {nombre:nombre, cargo:$("ctCargo").value.trim(), email:$("ctEmail").value.trim(), telefono:$("ctTelefono").value.trim(), linkedin:$("ctLinkedin").value.trim(), principal:$("ctPrincipal").checked};
+      var item = Object.assign({}, contEditIdx>=0 ? list[contEditIdx] : {}, {nombre:nombre, cargo:$("ctCargo").value.trim(), email:$("ctEmail").value.trim(), telefono:$("ctTelefono").value.trim(), movil:$("ctMovil").value.trim(), linkedin:$("ctLinkedin").value.trim(), principal:$("ctPrincipal").checked});
       if(item.principal) list.forEach(function(k){ k.principal=false; });
       if(contEditIdx>=0) list[contEditIdx]=item; else list.push(item);
       var btn=this; btn.disabled=true;
