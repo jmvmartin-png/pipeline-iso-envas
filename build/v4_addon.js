@@ -30,7 +30,7 @@
   var SEARCH_ICON='<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
 
   /* ======================= Navegación ======================= */
-  var V4 = {panel:"viewPanel", presupuestos:"viewPresu", tareas:"viewTareas", notas:"viewNotas", docs:"viewDocs", ajustes:"viewAjustes"};
+  var V4 = {panel:"viewPanel", presupuestos:"viewPresu", tareas:"viewTareas", notas:"viewNotas", ajustes:"viewAjustes"};
   var ORIG = {hoy:"viewHoy", board:"viewBoard", list:"viewList", embudo:"viewEmbudo"};
   var TITLES = {
     panel:["Panel","Situación comercial en tiempo real"],
@@ -40,7 +40,6 @@
     presupuestos:["Presupuestos","Todas las ofertas, su estado y los días sin respuesta"],
     tareas:["Tareas","Acciones pendientes y realizadas de todos los clientes"],
     notas:["Notas de reunión","Notas manuscritas archivadas por cliente"],
-    docs:["Documentación","Todos los documentos adjuntos a las fichas"],
     ajustes:["Ajustes","Cuenta, objetivos, aspecto y aplicación"]
   };
   var current = "hoy";
@@ -114,7 +113,6 @@
       else if(current==="presupuestos") renderPresu();
       else if(current==="tareas") renderTareas();
       else if(current==="notas") renderNotasView();
-      else if(current==="docs") renderDocs();
       else if(current==="ajustes") renderAjustes();
     }catch(e){ console.error("v4 render", e); }
   }
@@ -326,35 +324,6 @@
   function fillCliList(){ var p=P(); if(!p) return; var dl=$("v4CliList"); var n=p.clients.length; if(dl.dataset.n==String(n)) return; dl.dataset.n=String(n);
     dl.innerHTML=p.clients.slice().sort(function(a,b){return (a.empresa||"").localeCompare(b.empresa||"");}).map(function(c){return '<option value="'+esc(c.empresa||"")+'">';}).join(""); }
 
-  /* ======================= DOCUMENTACIÓN ======================= */
-  var docF={cat:"", q:""};
-  function renderDocs(){
-    var p=P(), box=$("viewDocs");
-    if(!box.dataset.wired){
-      box.innerHTML='<div class="v4tools"><label class="v4search">'+SEARCH_ICON+'<input id="v4dQ" type="search" placeholder="Buscar por nombre de archivo o cliente" autocomplete="off"></label><button class="btn primary" type="button" id="v4dAdd">Adjuntar documentación</button></div>'+
-        '<div class="v4chips" id="v4dChips" style="margin-bottom:12px"></div><div class="v4card" style="overflow-x:auto"><table class="v4tbl"><thead><tr><th>Archivo</th><th>Cliente</th><th>Categoría</th><th>Tamaño</th><th>Fecha</th><th></th></tr></thead><tbody id="v4dRows"></tbody></table></div>';
-      box.dataset.wired="1";
-      $("v4dQ").addEventListener("input", function(){ docF.q=this.value; renderDocs(); });
-      $("v4dAdd").addEventListener("click", function(){ $("btnPasteEmail").click(); });
-      $("v4dChips").addEventListener("click", function(e){ var b=e.target.closest("[data-c]"); if(!b) return; docF.cat=b.getAttribute("data-c"); renderDocs(); });
-      $("v4dRows").addEventListener("click", function(e){
-        var a=e.target.closest("[data-openasset]"); if(a){ window.__openAsset(a.getAttribute("data-openasset"), a.getAttribute("data-type")||undefined).catch(function(){toast("No se encontró el archivo.");}); return; }
-        var d=e.target.closest("[data-dl]"); if(d){ downloadAsset(d.getAttribute("data-dl"), d.getAttribute("data-name")); return; }
-        var o=e.target.closest("[data-open]"); if(o) openClient(o.getAttribute("data-open"), "documentos");
-      });
-    }
-    var all=p.files.slice().sort(function(a,b){return (b.createdAt||"").localeCompare(a.createdAt||"");});
-    var cats=[["","Todos"],["Presupuesto","Presupuestos"],["Documentación complementaria","Documentación"]];
-    $("v4dChips").innerHTML=cats.map(function(c){ var n=all.filter(function(f){return !c[0]||(f.categoria||"Documentación complementaria")===c[0];}).length; return '<button type="button" class="v4chip'+(docF.cat===c[0]?" on":"")+'" data-c="'+esc(c[0])+'">'+c[1]+' · '+n+'</button>'; }).join("");
-    var q=fold(docF.q);
-    var rows=all.filter(function(f){ return (!docF.cat||(f.categoria||"Documentación complementaria")===docF.cat) && (!q||fold((f.name||"")+" "+cliName(f.clientId)).indexOf(q)>=0); });
-    function hs(n){ if(n==null) return ""; if(n<1024) return n+" B"; if(n<1048576) return Math.round(n/1024)+" KB"; return (n/1048576).toFixed(1)+" MB"; }
-    $("v4dRows").innerHTML = rows.length ? rows.map(function(f){ var ext=(/\.([a-z0-9]+)$/i.exec(f.name||"")||["",""])[1].toUpperCase()||"DOC";
-      return '<tr><td><span class="v4pill" style="font-family:IBM Plex Mono,monospace">'+esc(ext.slice(0,4))+'</span> '+esc(f.name||"")+'</td><td><button class="v4link" type="button" data-open="'+esc(f.clientId)+'">'+esc(cliName(f.clientId))+'</button></td><td>'+esc(f.categoria||"Documentación complementaria")+'</td><td class="mono">'+hs(f.sizeBytes)+'</td><td class="mono">'+fmtDate((f.createdAt||"").slice(0,10))+'</td>'+
-        '<td style="white-space:nowrap"><button class="btn ghost" type="button" data-openasset="'+esc(f.assetId)+'" data-type="'+esc(f.contentType||"")+'" style="padding:4px 8px;font-size:12px">Abrir</button><button class="btn ghost" type="button" data-dl="'+esc(f.assetId)+'" data-name="'+esc(f.name||"documento")+'" style="padding:4px 8px;font-size:12px">Descargar</button></td></tr>'; }).join("")
-      : '<tr><td colspan="6" class="v4empty" style="text-align:center;padding:28px">No hay documentos con estos filtros.</td></tr>';
-  }
-
   /* ======================= AJUSTES ======================= */
   function renderAjustes(){
     var box=$("viewAjustes"); var u=window.__pipelineUser||{};
@@ -381,7 +350,7 @@
 
   /* ======================= FICHA: pestañas ======================= */
   var ptab="ficha", pendingTab=null;
-  var PTABS=[["ficha","Ficha"],["contactos","Contactos"],["actividad","Historial y tareas"],["presupuestos","Presupuestos"],["documentos","Documentos"],["notas","Notas de reunión"]];
+  var PTABS=[["ficha","Ficha"],["contactos","Contactos"],["actividad","Historial y tareas"],["presupuestos","Presupuestos"],["documentos","Documentación"],["notas","Notas de reunión"]];
   function setupPanelTabs(){
     var body=document.querySelector("#panel .panelBody"); if(!body) return;
     var secs=body.querySelectorAll(":scope > .section");

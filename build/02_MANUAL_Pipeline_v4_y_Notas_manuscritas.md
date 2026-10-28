@@ -33,14 +33,14 @@ Barra lateral (en el móvil se abre con el botón ☰):
 | | **Presupuestos** | Todos los presupuestos, con filtros por estado y sector, semáforo de días sin respuesta y cambio de estado en la propia tabla. Enlaces a PDF, Word y Editar. Exportación a CSV. |
 | Actividad | **Tareas** | Todas las tareas: pendientes, vencidas, de hoy, próximas y hechas. Botones «Hecha» y «Reabrir», y alta de tareas nuevas. |
 | | **Notas de reunión** | Archivo global de notas manuscritas, con buscador y filtros por cliente y tipo. |
-| | **Documentación** | Todos los adjuntos, con buscador y los botones Abrir y Descargar. |
 | Sistema | **Ajustes** | Registro de cambios, importar, contraseña y salir. También el objetivo de visitas, el tema claro u oscuro, la vista de inicio y el acceso a la v3. |
 
 Los botones **Búsqueda / Orden** (Ctrl+K), **Adjuntar documentación** y **Nuevo cliente** siguen arriba a la derecha y funcionan igual que antes.
 
 ## 3. Ficha del cliente, ahora con pestañas
 
-**Ficha · Contactos · Historial y tareas · Presupuestos · Documentos · Notas de reunión.**
+**Ficha · Contactos · Historial y tareas · Presupuestos · Documentación · Notas de reunión.**
+La documentación se archiva **solo en el espacio de cada cliente**, en la pestaña «Documentación» de su ficha. No hay un archivo general de documentos. El botón «Adjuntar documentación» de arriba también guarda siempre los archivos en la ficha del cliente que elijas.
 Todos los campos y botones de antes están en su pestaña. El botón naranja **✎ Nota** de la cabecera abre directamente la hoja para escribir.
 
 ## 4. Notas manuscritas con lápiz

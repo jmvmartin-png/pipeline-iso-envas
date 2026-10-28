@@ -79,7 +79,6 @@ header_new = f'''<div class="v4app">
     <div class="v4grp">Actividad</div>
     {tab('tareas','Tareas',False,'<span class="v4count" id="v4cTareas" title="Vencidas"></span>')}
     {tab('notas','Notas de reunión',False,'<span class="v4count soft" id="v4cNotas"></span>')}
-    {tab('docs','Documentación')}
     <div class="v4grp">Sistema</div>
     {tab('ajustes','Ajustes')}
   </nav>
@@ -110,7 +109,6 @@ rep('''  </section>
   <section id="viewPresu" hidden></section>
   <section id="viewTareas" hidden></section>
   <section id="viewNotas" hidden></section>
-  <section id="viewDocs" hidden></section>
   <section id="viewAjustes" hidden></section>
 </div>
 </div>

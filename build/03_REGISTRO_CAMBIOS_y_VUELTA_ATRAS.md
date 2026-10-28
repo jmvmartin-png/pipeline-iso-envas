@@ -20,9 +20,12 @@ Son seis añadidos mínimos; ninguna función existente se elimina ni se reescri
 5. El conector de Supabase carga la colección `notas`.
 6. Las pestañas Hoy, Pipeline, Clientes y Embudo pasan a la barra lateral, con los mismos botones y el mismo comportamiento.
 
+## Ajuste del 28/10/2026, 20:10
+- Se retira el apartado general «Documentación» del menú. La documentación queda archivada y consultable únicamente en la ficha de cada cliente, en la pestaña «Documentación».
+
 ## Pruebas realizadas antes de publicar
 Se ha usado una base de datos simulada con los mismos métodos que Supabase y clientes ficticios:
-- Las 10 vistas: navegación, títulos y paso de los KPI al filtro de clientes.
+- Las 9 vistas: navegación, títulos y paso de los KPI al filtro de clientes.
 - Los modales Búsqueda, Adjuntar y Nuevo cliente se abren como antes.
 - Ficha con 6 pestañas.
 - Nota de 2 páginas con bolígrafo y marcador → guardar. Se crean la nota, el historial y la tarea.
