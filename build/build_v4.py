@@ -28,7 +28,9 @@ rep('<title>ISO-ENVAS Pipeline</title>',
     '<meta name="apple-mobile-web-app-capable" content="yes">\n'
     '<meta name="apple-mobile-web-app-title" content="Pipeline">\n'
     '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n'
-    '<meta name="application-name" content="ISO-ENVAS Pipeline">')
+    '<meta name="application-name" content="ISO-ENVAS Pipeline">\n'
+    '<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">\n'
+    '<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>')
 
 # la hoja v4 va DESPUÉS de la hoja original para sobrescribir solo la presentación
 first_style_end = out.find('</style>', out.find('<title>ISO-ENVAS Pipeline</title>'))
