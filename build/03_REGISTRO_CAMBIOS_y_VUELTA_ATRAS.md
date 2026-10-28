@@ -22,10 +22,11 @@ Son seis añadidos mínimos; ninguna función existente se elimina ni se reescri
 
 ## Ajuste del 28/10/2026, 20:10
 - Se retira el apartado general «Documentación» del menú. La documentación queda archivada y consultable únicamente en la ficha de cada cliente, en la pestaña «Documentación».
+- Se retira el archivo general «Notas de reunión» del menú y del Panel. Cada nota queda archivada solo en el espacio de su cliente, en la pestaña «Notas de reunión» de la ficha.
 
 ## Pruebas realizadas antes de publicar
 Se ha usado una base de datos simulada con los mismos métodos que Supabase y clientes ficticios:
-- Las 9 vistas: navegación, títulos y paso de los KPI al filtro de clientes.
+- Las 8 vistas: navegación, títulos y paso de los KPI al filtro de clientes.
 - Los modales Búsqueda, Adjuntar y Nuevo cliente se abren como antes.
 - Ficha con 6 pestañas.
 - Nota de 2 páginas con bolígrafo y marcador → guardar. Se crean la nota, el historial y la tarea.

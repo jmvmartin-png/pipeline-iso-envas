@@ -623,7 +623,6 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     <button class="tab" data-tab="presupuestos" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg><span>Presupuestos</span><span class="v4count" id="v4cPresu" title="Enviados con más de 48 h sin respuesta"></span></button>
     <div class="v4grp">Actividad</div>
     <button class="tab" data-tab="tareas" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Tareas</span><span class="v4count" id="v4cTareas" title="Vencidas"></span></button>
-    <button class="tab" data-tab="notas" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>Notas de reunión</span><span class="v4count soft" id="v4cNotas"></span></button>
     <div class="v4grp">Sistema</div>
     <button class="tab" data-tab="ajustes" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>Ajustes</span></button>
   </nav>
@@ -678,7 +677,6 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
   <section id="viewPanel" hidden></section>
   <section id="viewPresu" hidden></section>
   <section id="viewTareas" hidden></section>
-  <section id="viewNotas" hidden></section>
   <section id="viewAjustes" hidden></section>
 </div>
 </div>
@@ -3813,7 +3811,7 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
   var SEARCH_ICON='<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
 
   /* ======================= Navegación ======================= */
-  var V4 = {panel:"viewPanel", presupuestos:"viewPresu", tareas:"viewTareas", notas:"viewNotas", ajustes:"viewAjustes"};
+  var V4 = {panel:"viewPanel", presupuestos:"viewPresu", tareas:"viewTareas", ajustes:"viewAjustes"};
   var ORIG = {hoy:"viewHoy", board:"viewBoard", list:"viewList", embudo:"viewEmbudo"};
   var TITLES = {
     panel:["Panel","Situación comercial en tiempo real"],
@@ -3822,7 +3820,6 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     embudo:["Embudo","Conversión por estado, sector y origen del lead"],
     presupuestos:["Presupuestos","Todas las ofertas, su estado y los días sin respuesta"],
     tareas:["Tareas","Acciones pendientes y realizadas de todos los clientes"],
-    notas:["Notas de reunión","Notas manuscritas archivadas por cliente"],
     ajustes:["Ajustes","Cuenta, objetivos, aspecto y aplicación"]
   };
   var current = "hoy";
@@ -3880,7 +3877,7 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     var venc = pend.filter(function(t){ return (t.fecha||"")<hoy; }).length;
     var stale = p.presupuestos.filter(function(x){ return x.estado==="Enviado" && (daysSince(x.fecha)||0)>2; }).length;
     $("v4cHoy").textContent = hoyN||""; $("v4cTareas").textContent = venc||"";
-    $("v4cPresu").textContent = stale||""; $("v4cNotas").textContent = notas.length||"";
+    $("v4cPresu").textContent = stale||"";
     var u=window.__pipelineUser||{};
     if(u.email){ $("v4user").textContent = u.nombre||u.email; $("v4userMail").textContent = u.email;
       $("v4avatar").textContent = (String(u.nombre||u.email).split(/[\s@.]+/).filter(Boolean).slice(0,2).map(function(w){return w[0];}).join("")||"·").toUpperCase(); }
@@ -3895,7 +3892,6 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
       if(current==="panel") renderPanel();
       else if(current==="presupuestos") renderPresu();
       else if(current==="tareas") renderTareas();
-      else if(current==="notas") renderNotasView();
       else if(current==="ajustes") renderAjustes();
     }catch(e){ console.error("v4 render", e); }
   }
@@ -3915,7 +3911,6 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     var altas = cl.filter(function(c){ return monthKey(c.fechaAlta||c.createdAt)===mes; }).length;
     var pend = p.tasks.filter(function(t){return t.estado!=="Hecha";});
     var venc = pend.filter(function(t){return (t.fecha||"")<hoy;}).length;
-    var notasMes = notas.filter(function(n){ return monthKey(n.fecha)===mes; }).length;
     function K(go,cls,l,v,s,bar){ return '<button type="button" class="v4kpi '+cls+'" data-go="'+go+'"><span class="l">'+esc(l)+'</span><span class="v">'+v+'</span>'+(s?'<span class="s">'+s+'</span>':'')+(bar!=null?'<span class="v4bar or"><i style="width:'+Math.min(100,bar)+'%"></i></span>':'')+'</button>'; }
     var kp = K("presupuestos","hl","Valor en curso",eur0(valOpen),"Borrador + enviado, sin IVA") +
       K("embudo","","Tasa de éxito",cerr?Math.round(acept*100/cerr)+" %":"—",acept+" aceptados de "+cerr+" cerrados") +
@@ -3924,7 +3919,7 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
       K("board","good","Clientes activos",String(activos),cl.length+" fichas en total") +
       K("list","","Altas del mes",String(altas),"Fichas nuevas en "+new Date().toLocaleDateString("es-ES",{month:"long"})) +
       K("tareas-vencidas",venc?"crit":"","Tareas vencidas",String(venc),pend.length+" pendientes en total") +
-      K("notas","","Notas de reunión",String(notasMes),"Este mes · "+notas.length+" archivadas");
+      K("board","","Oportunidades abiertas",String(cl.filter(function(c){return c.estado==="Negociación"||c.estado==="Cierre";}).length),"En negociación o cierre");
     // visitas de la semana
     var d0=new Date(); d0.setHours(0,0,0,0); var dw=(d0.getDay()+6)%7; d0.setDate(d0.getDate()-dw);
     var lunes=d0.toISOString().slice(0,10);
@@ -3949,9 +3944,6 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     var months=[]; var dm=new Date(); dm.setDate(1);
     for(var i=5;i>=0;i--){ var m=new Date(dm.getFullYear(), dm.getMonth()-i, 1); months.push({k:m.getFullYear()+"-"+String(m.getMonth()+1).padStart(2,"0"), l:m.toLocaleDateString("es-ES",{month:"short"}).replace(".","")}); }
     months.forEach(function(m){ m.s=0; m.a=0; pr.forEach(function(x){ if(monthKey(x.fecha)===m.k){ m.s+=num(x.importe); if(x.estado==="Aceptado") m.a+=num(x.importe); } }); });
-    // notas recientes
-    var nr = notas.slice().sort(function(a,b){ return (b.fecha||"").localeCompare(a.fecha||"") || (b.createdAt||"").localeCompare(a.createdAt||""); }).slice(0,4);
-    var nh = nr.length ? '<div class="v4notesGrid">'+nr.map(noteCard).join("")+'</div>' : '<div class="v4empty">Aún no hay notas manuscritas. Abre una ficha y pulsa «Nota» para escribir con el lápiz.</div>';
     box.innerHTML =
       '<div class="v4kpis">'+kp+'</div>'+
       '<div class="v4g2">'+
@@ -3962,8 +3954,7 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
         '<div class="v4card"><div class="v4ch">Embudo comercial <span class="meta">fichas · € en curso</span></div><div class="v4cb">'+fn+'</div></div>'+
         '<div class="v4card"><div class="v4ch">Clientes por sector <span class="meta">pulsa para buscar</span></div><div class="v4cb">'+sh+'</div></div>'+
       '</div>'+
-      '<div class="v4card" style="margin-bottom:12px"><div class="v4ch">Presupuestado frente a aceptado <span class="v4legend"><span><i style="background:var(--line)"></i>Presupuestado</span><span><i style="background:var(--brand-orange)"></i>Aceptado</span></span></div><div class="v4cb" style="overflow-x:auto">'+chart(months)+'</div></div>'+
-      '<div class="v4card"><div class="v4ch">Últimas notas de reunión <button class="btn ghost" type="button" data-go="notas" style="padding:4px 8px;font-size:12px">Archivo completo</button></div><div class="v4cb">'+nh+'</div></div>';
+      '<div class="v4card" style="margin-bottom:12px"><div class="v4ch">Presupuestado frente a aceptado <span class="v4legend"><span><i style="background:var(--line)"></i>Presupuestado</span><span><i style="background:var(--brand-orange)"></i>Aceptado</span></span></div><div class="v4cb" style="overflow-x:auto">'+chart(months)+'</div></div>';
     loadThumbs(box);
   }
   function chart(months){
@@ -4148,7 +4139,7 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     });
     // sección de notas
     var ns=document.createElement("div"); ns.className="section"; ns.id="v4NotasSection"; ns.setAttribute("data-ptab","notas");
-    ns.innerHTML='<h3>Notas de reunión (lápiz)</h3><div class="v4noteActions"><button class="btn primary" type="button" id="v4NewNote">✎ Nueva nota manuscrita</button><span class="v4empty" style="padding:6px 0">Escribe o dibuja con el lápiz de la pantalla. Se archiva en la ficha y en «Notas de reunión».</span></div><div class="v4notesGrid" id="v4ClientNotes"></div>';
+    ns.innerHTML='<h3>Notas de reunión (lápiz)</h3><div class="v4noteActions"><button class="btn primary" type="button" id="v4NewNote">✎ Nueva nota manuscrita</button><span class="v4empty" style="padding:6px 0">Escribe o dibuja con el lápiz de la pantalla. Queda archivada aquí, en el espacio de este cliente.</span></div><div class="v4notesGrid" id="v4ClientNotes"></div>';
     body.appendChild(ns);
     // timeline al principio del grupo actividad: lo colocamos tras "Nueva tarea"
     var bar=document.createElement("div"); bar.className="v4ptabs"; bar.id="v4ptabs"; bar.setAttribute("role","tablist");
@@ -4189,7 +4180,7 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     var p=P(); if(notasSub || !p || !p.db) return; notasSub=true;
     p.db.collection("notas").onSnapshot(function(snap){
       notas = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-      renderCounts(); renderPanelExtras(); if(current==="notas"||current==="panel") renderCurrent();
+      renderCounts(); renderPanelExtras(); if(current==="panel") renderCurrent();
     }, function(e){ console.error("notas", e); });
   }
   var thumbCache={};
@@ -4208,34 +4199,6 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     var pg=(n.paginas||[]); var first=pg[0]&&pg[0].png;
     return '<button type="button" class="v4note" data-note="'+esc(n.id)+'"><div class="th" '+(first?'data-thumb="'+esc(first)+'"':'')+'><span class="ph">'+(first?'Cargando…':'Sin páginas')+'</span></div>'+
       '<div class="md"><span class="tt">'+esc(n.titulo||"Nota sin título")+'</span><span class="ss">'+esc(cliName(n.clientId))+'</span><span class="ss">'+fmtDate(n.fecha)+' · '+esc(n.tipo||"Reunión")+'</span><span class="pg">'+pg.length+' pág.'+((n.etiquetas||[]).length?' · '+esc((n.etiquetas||[]).join(", ")):'')+'</span></div></button>';
-  }
-  var notaF={q:"", cli:"", tipo:""};
-  function renderNotasView(){
-    var box=$("viewNotas");
-    if(!box.dataset.wired){
-      box.innerHTML='<div class="v4tools"><label class="v4search">'+SEARCH_ICON+'<input id="v4nQ" type="search" placeholder="Buscar en títulos, resúmenes, asistentes y etiquetas" autocomplete="off"></label>'+
-        '<input class="v4sel" id="v4nCli" list="v4CliList" placeholder="Filtrar por cliente" autocomplete="off" style="min-width:200px">'+
-        '<select class="v4sel" id="v4nTipo" aria-label="Tipo"><option value="">Todos los tipos</option><option>Reunión</option><option>Visita</option><option>Llamada</option><option>Videollamada</option><option>Feria</option><option>Otra</option></select>'+
-        '<button class="btn primary" type="button" id="v4nNew">✎ Nueva nota</button></div>'+
-        '<div class="v4card" id="v4nPick" hidden style="margin-bottom:12px"><div class="v4cb"><div class="v4form"><label>¿Para qué cliente es la nota?<input id="v4nPickCli" list="v4CliList" placeholder="Escribe el nombre del cliente" autocomplete="off"></label></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" type="button" id="v4nPickGo">Empezar a escribir</button><button class="btn ghost" type="button" id="v4nPickNo">Cancelar</button></div></div></div>'+
-        '<div id="v4nCount" class="v4empty" style="padding-top:0"></div><div class="v4notesGrid big" id="v4nGrid"></div>';
-      box.dataset.wired="1";
-      $("v4nQ").addEventListener("input", function(){ notaF.q=this.value; renderNotasView(); });
-      $("v4nCli").addEventListener("change", function(){ notaF.cli=this.value; renderNotasView(); });
-      $("v4nCli").addEventListener("input", function(){ if(!this.value){ notaF.cli=""; renderNotasView(); } });
-      $("v4nTipo").addEventListener("change", function(){ notaF.tipo=this.value; renderNotasView(); });
-      $("v4nNew").addEventListener("click", function(){ $("v4nPick").hidden=false; $("v4nPickCli").focus(); });
-      $("v4nPickNo").addEventListener("click", function(){ $("v4nPick").hidden=true; });
-      $("v4nPickGo").addEventListener("click", function(){ var c=findClientByName($("v4nPickCli").value); if(!c){ toast("Elige un cliente de la lista."); return; } $("v4nPick").hidden=true; $("v4nPickCli").value=""; openEditor(c.id,null); });
-      $("v4nGrid").addEventListener("click", function(e){ var n=e.target.closest("[data-note]"); if(n) openViewer(n.getAttribute("data-note")); });
-    }
-    var q=fold(notaF.q), fc=notaF.cli?findClientByName(notaF.cli):null;
-    var list=notas.filter(function(n){ return (!fc||n.clientId===fc.id) && (!notaF.tipo||n.tipo===notaF.tipo) &&
-      (!q || fold([n.titulo,n.resumen,n.asistentes,(n.etiquetas||[]).join(" "),cliName(n.clientId),n.proximoPaso].join(" ")).indexOf(q)>=0); })
-      .sort(function(a,b){ return (b.fecha||"").localeCompare(a.fecha||"")||(b.createdAt||"").localeCompare(a.createdAt||""); });
-    $("v4nCount").textContent = list.length+" nota(s)"+(list.length!==notas.length?" de "+notas.length:"");
-    $("v4nGrid").innerHTML = list.length ? list.map(noteCard).join("") : '<div class="v4empty">'+(notas.length?'Ninguna nota coincide con la búsqueda.':'Aún no hay notas. Pulsa «Nueva nota» o abre la ficha de un cliente y usa «✎ Nota».')+'</div>';
-    loadThumbs($("v4nGrid"));
   }
   async function deleteNoteAssets(n){
     var a; try{ a=await window.claude.use("assets"); }catch(e){ return; }

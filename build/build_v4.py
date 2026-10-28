@@ -78,7 +78,6 @@ header_new = f'''<div class="v4app">
     {tab('presupuestos','Presupuestos',False,'<span class="v4count" id="v4cPresu" title="Enviados con más de 48 h sin respuesta"></span>')}
     <div class="v4grp">Actividad</div>
     {tab('tareas','Tareas',False,'<span class="v4count" id="v4cTareas" title="Vencidas"></span>')}
-    {tab('notas','Notas de reunión',False,'<span class="v4count soft" id="v4cNotas"></span>')}
     <div class="v4grp">Sistema</div>
     {tab('ajustes','Ajustes')}
   </nav>
@@ -108,7 +107,6 @@ rep('''  </section>
   <section id="viewPanel" hidden></section>
   <section id="viewPresu" hidden></section>
   <section id="viewTareas" hidden></section>
-  <section id="viewNotas" hidden></section>
   <section id="viewAjustes" hidden></section>
 </div>
 </div>

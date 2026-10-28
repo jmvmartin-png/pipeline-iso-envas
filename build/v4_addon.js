@@ -30,7 +30,7 @@
   var SEARCH_ICON='<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
 
   /* ======================= Navegación ======================= */
-  var V4 = {panel:"viewPanel", presupuestos:"viewPresu", tareas:"viewTareas", notas:"viewNotas", ajustes:"viewAjustes"};
+  var V4 = {panel:"viewPanel", presupuestos:"viewPresu", tareas:"viewTareas", ajustes:"viewAjustes"};
   var ORIG = {hoy:"viewHoy", board:"viewBoard", list:"viewList", embudo:"viewEmbudo"};
   var TITLES = {
     panel:["Panel","Situación comercial en tiempo real"],
@@ -39,7 +39,6 @@
     embudo:["Embudo","Conversión por estado, sector y origen del lead"],
     presupuestos:["Presupuestos","Todas las ofertas, su estado y los días sin respuesta"],
     tareas:["Tareas","Acciones pendientes y realizadas de todos los clientes"],
-    notas:["Notas de reunión","Notas manuscritas archivadas por cliente"],
     ajustes:["Ajustes","Cuenta, objetivos, aspecto y aplicación"]
   };
   var current = "hoy";
@@ -97,7 +96,7 @@
     var venc = pend.filter(function(t){ return (t.fecha||"")<hoy; }).length;
     var stale = p.presupuestos.filter(function(x){ return x.estado==="Enviado" && (daysSince(x.fecha)||0)>2; }).length;
     $("v4cHoy").textContent = hoyN||""; $("v4cTareas").textContent = venc||"";
-    $("v4cPresu").textContent = stale||""; $("v4cNotas").textContent = notas.length||"";
+    $("v4cPresu").textContent = stale||"";
     var u=window.__pipelineUser||{};
     if(u.email){ $("v4user").textContent = u.nombre||u.email; $("v4userMail").textContent = u.email;
       $("v4avatar").textContent = (String(u.nombre||u.email).split(/[\s@.]+/).filter(Boolean).slice(0,2).map(function(w){return w[0];}).join("")||"·").toUpperCase(); }
@@ -112,7 +111,6 @@
       if(current==="panel") renderPanel();
       else if(current==="presupuestos") renderPresu();
       else if(current==="tareas") renderTareas();
-      else if(current==="notas") renderNotasView();
       else if(current==="ajustes") renderAjustes();
     }catch(e){ console.error("v4 render", e); }
   }
@@ -132,7 +130,6 @@
     var altas = cl.filter(function(c){ return monthKey(c.fechaAlta||c.createdAt)===mes; }).length;
     var pend = p.tasks.filter(function(t){return t.estado!=="Hecha";});
     var venc = pend.filter(function(t){return (t.fecha||"")<hoy;}).length;
-    var notasMes = notas.filter(function(n){ return monthKey(n.fecha)===mes; }).length;
     function K(go,cls,l,v,s,bar){ return '<button type="button" class="v4kpi '+cls+'" data-go="'+go+'"><span class="l">'+esc(l)+'</span><span class="v">'+v+'</span>'+(s?'<span class="s">'+s+'</span>':'')+(bar!=null?'<span class="v4bar or"><i style="width:'+Math.min(100,bar)+'%"></i></span>':'')+'</button>'; }
     var kp = K("presupuestos","hl","Valor en curso",eur0(valOpen),"Borrador + enviado, sin IVA") +
       K("embudo","","Tasa de éxito",cerr?Math.round(acept*100/cerr)+" %":"—",acept+" aceptados de "+cerr+" cerrados") +
@@ -141,7 +138,7 @@
       K("board","good","Clientes activos",String(activos),cl.length+" fichas en total") +
       K("list","","Altas del mes",String(altas),"Fichas nuevas en "+new Date().toLocaleDateString("es-ES",{month:"long"})) +
       K("tareas-vencidas",venc?"crit":"","Tareas vencidas",String(venc),pend.length+" pendientes en total") +
-      K("notas","","Notas de reunión",String(notasMes),"Este mes · "+notas.length+" archivadas");
+      K("board","","Oportunidades abiertas",String(cl.filter(function(c){return c.estado==="Negociación"||c.estado==="Cierre";}).length),"En negociación o cierre");
     // visitas de la semana
     var d0=new Date(); d0.setHours(0,0,0,0); var dw=(d0.getDay()+6)%7; d0.setDate(d0.getDate()-dw);
     var lunes=d0.toISOString().slice(0,10);
@@ -166,9 +163,6 @@
     var months=[]; var dm=new Date(); dm.setDate(1);
     for(var i=5;i>=0;i--){ var m=new Date(dm.getFullYear(), dm.getMonth()-i, 1); months.push({k:m.getFullYear()+"-"+String(m.getMonth()+1).padStart(2,"0"), l:m.toLocaleDateString("es-ES",{month:"short"}).replace(".","")}); }
     months.forEach(function(m){ m.s=0; m.a=0; pr.forEach(function(x){ if(monthKey(x.fecha)===m.k){ m.s+=num(x.importe); if(x.estado==="Aceptado") m.a+=num(x.importe); } }); });
-    // notas recientes
-    var nr = notas.slice().sort(function(a,b){ return (b.fecha||"").localeCompare(a.fecha||"") || (b.createdAt||"").localeCompare(a.createdAt||""); }).slice(0,4);
-    var nh = nr.length ? '<div class="v4notesGrid">'+nr.map(noteCard).join("")+'</div>' : '<div class="v4empty">Aún no hay notas manuscritas. Abre una ficha y pulsa «Nota» para escribir con el lápiz.</div>';
     box.innerHTML =
       '<div class="v4kpis">'+kp+'</div>'+
       '<div class="v4g2">'+
@@ -179,8 +173,7 @@
         '<div class="v4card"><div class="v4ch">Embudo comercial <span class="meta">fichas · € en curso</span></div><div class="v4cb">'+fn+'</div></div>'+
         '<div class="v4card"><div class="v4ch">Clientes por sector <span class="meta">pulsa para buscar</span></div><div class="v4cb">'+sh+'</div></div>'+
       '</div>'+
-      '<div class="v4card" style="margin-bottom:12px"><div class="v4ch">Presupuestado frente a aceptado <span class="v4legend"><span><i style="background:var(--line)"></i>Presupuestado</span><span><i style="background:var(--brand-orange)"></i>Aceptado</span></span></div><div class="v4cb" style="overflow-x:auto">'+chart(months)+'</div></div>'+
-      '<div class="v4card"><div class="v4ch">Últimas notas de reunión <button class="btn ghost" type="button" data-go="notas" style="padding:4px 8px;font-size:12px">Archivo completo</button></div><div class="v4cb">'+nh+'</div></div>';
+      '<div class="v4card" style="margin-bottom:12px"><div class="v4ch">Presupuestado frente a aceptado <span class="v4legend"><span><i style="background:var(--line)"></i>Presupuestado</span><span><i style="background:var(--brand-orange)"></i>Aceptado</span></span></div><div class="v4cb" style="overflow-x:auto">'+chart(months)+'</div></div>';
     loadThumbs(box);
   }
   function chart(months){
@@ -365,7 +358,7 @@
     });
     // sección de notas
     var ns=document.createElement("div"); ns.className="section"; ns.id="v4NotasSection"; ns.setAttribute("data-ptab","notas");
-    ns.innerHTML='<h3>Notas de reunión (lápiz)</h3><div class="v4noteActions"><button class="btn primary" type="button" id="v4NewNote">✎ Nueva nota manuscrita</button><span class="v4empty" style="padding:6px 0">Escribe o dibuja con el lápiz de la pantalla. Se archiva en la ficha y en «Notas de reunión».</span></div><div class="v4notesGrid" id="v4ClientNotes"></div>';
+    ns.innerHTML='<h3>Notas de reunión (lápiz)</h3><div class="v4noteActions"><button class="btn primary" type="button" id="v4NewNote">✎ Nueva nota manuscrita</button><span class="v4empty" style="padding:6px 0">Escribe o dibuja con el lápiz de la pantalla. Queda archivada aquí, en el espacio de este cliente.</span></div><div class="v4notesGrid" id="v4ClientNotes"></div>';
     body.appendChild(ns);
     // timeline al principio del grupo actividad: lo colocamos tras "Nueva tarea"
     var bar=document.createElement("div"); bar.className="v4ptabs"; bar.id="v4ptabs"; bar.setAttribute("role","tablist");
@@ -406,7 +399,7 @@
     var p=P(); if(notasSub || !p || !p.db) return; notasSub=true;
     p.db.collection("notas").onSnapshot(function(snap){
       notas = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-      renderCounts(); renderPanelExtras(); if(current==="notas"||current==="panel") renderCurrent();
+      renderCounts(); renderPanelExtras(); if(current==="panel") renderCurrent();
     }, function(e){ console.error("notas", e); });
   }
   var thumbCache={};
@@ -425,34 +418,6 @@
     var pg=(n.paginas||[]); var first=pg[0]&&pg[0].png;
     return '<button type="button" class="v4note" data-note="'+esc(n.id)+'"><div class="th" '+(first?'data-thumb="'+esc(first)+'"':'')+'><span class="ph">'+(first?'Cargando…':'Sin páginas')+'</span></div>'+
       '<div class="md"><span class="tt">'+esc(n.titulo||"Nota sin título")+'</span><span class="ss">'+esc(cliName(n.clientId))+'</span><span class="ss">'+fmtDate(n.fecha)+' · '+esc(n.tipo||"Reunión")+'</span><span class="pg">'+pg.length+' pág.'+((n.etiquetas||[]).length?' · '+esc((n.etiquetas||[]).join(", ")):'')+'</span></div></button>';
-  }
-  var notaF={q:"", cli:"", tipo:""};
-  function renderNotasView(){
-    var box=$("viewNotas");
-    if(!box.dataset.wired){
-      box.innerHTML='<div class="v4tools"><label class="v4search">'+SEARCH_ICON+'<input id="v4nQ" type="search" placeholder="Buscar en títulos, resúmenes, asistentes y etiquetas" autocomplete="off"></label>'+
-        '<input class="v4sel" id="v4nCli" list="v4CliList" placeholder="Filtrar por cliente" autocomplete="off" style="min-width:200px">'+
-        '<select class="v4sel" id="v4nTipo" aria-label="Tipo"><option value="">Todos los tipos</option><option>Reunión</option><option>Visita</option><option>Llamada</option><option>Videollamada</option><option>Feria</option><option>Otra</option></select>'+
-        '<button class="btn primary" type="button" id="v4nNew">✎ Nueva nota</button></div>'+
-        '<div class="v4card" id="v4nPick" hidden style="margin-bottom:12px"><div class="v4cb"><div class="v4form"><label>¿Para qué cliente es la nota?<input id="v4nPickCli" list="v4CliList" placeholder="Escribe el nombre del cliente" autocomplete="off"></label></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" type="button" id="v4nPickGo">Empezar a escribir</button><button class="btn ghost" type="button" id="v4nPickNo">Cancelar</button></div></div></div>'+
-        '<div id="v4nCount" class="v4empty" style="padding-top:0"></div><div class="v4notesGrid big" id="v4nGrid"></div>';
-      box.dataset.wired="1";
-      $("v4nQ").addEventListener("input", function(){ notaF.q=this.value; renderNotasView(); });
-      $("v4nCli").addEventListener("change", function(){ notaF.cli=this.value; renderNotasView(); });
-      $("v4nCli").addEventListener("input", function(){ if(!this.value){ notaF.cli=""; renderNotasView(); } });
-      $("v4nTipo").addEventListener("change", function(){ notaF.tipo=this.value; renderNotasView(); });
-      $("v4nNew").addEventListener("click", function(){ $("v4nPick").hidden=false; $("v4nPickCli").focus(); });
-      $("v4nPickNo").addEventListener("click", function(){ $("v4nPick").hidden=true; });
-      $("v4nPickGo").addEventListener("click", function(){ var c=findClientByName($("v4nPickCli").value); if(!c){ toast("Elige un cliente de la lista."); return; } $("v4nPick").hidden=true; $("v4nPickCli").value=""; openEditor(c.id,null); });
-      $("v4nGrid").addEventListener("click", function(e){ var n=e.target.closest("[data-note]"); if(n) openViewer(n.getAttribute("data-note")); });
-    }
-    var q=fold(notaF.q), fc=notaF.cli?findClientByName(notaF.cli):null;
-    var list=notas.filter(function(n){ return (!fc||n.clientId===fc.id) && (!notaF.tipo||n.tipo===notaF.tipo) &&
-      (!q || fold([n.titulo,n.resumen,n.asistentes,(n.etiquetas||[]).join(" "),cliName(n.clientId),n.proximoPaso].join(" ")).indexOf(q)>=0); })
-      .sort(function(a,b){ return (b.fecha||"").localeCompare(a.fecha||"")||(b.createdAt||"").localeCompare(a.createdAt||""); });
-    $("v4nCount").textContent = list.length+" nota(s)"+(list.length!==notas.length?" de "+notas.length:"");
-    $("v4nGrid").innerHTML = list.length ? list.map(noteCard).join("") : '<div class="v4empty">'+(notas.length?'Ninguna nota coincide con la búsqueda.':'Aún no hay notas. Pulsa «Nueva nota» o abre la ficha de un cliente y usa «✎ Nota».')+'</div>';
-    loadThumbs($("v4nGrid"));
   }
   async function deleteNoteAssets(n){
     var a; try{ a=await window.claude.use("assets"); }catch(e){ return; }
