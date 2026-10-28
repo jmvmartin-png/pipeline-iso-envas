@@ -3971,6 +3971,7 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
     loadThumbs(box);
   }
   function chart(months){
+    if(!months.some(function(m){return m.s>0;})) return '<div class="v4empty">Aún no hay presupuestos con fecha en los últimos 6 meses.</div>';
     var W=760,H=230,pl=56,pr=12,pt=16,pb=30; var iw=W-pl-pr, ih=H-pt-pb;
     var mx=Math.max.apply(null, months.map(function(m){return m.s;}).concat([1]));
     var step=Math.pow(10,Math.floor(Math.log10(mx))); var nice=[1,2,2.5,5,10].map(function(f){return f*step;}).find(function(v){return v*4>=mx;})||step*10; var top=nice*4;
