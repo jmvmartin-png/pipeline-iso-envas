@@ -242,3 +242,14 @@ header.top{position:static; background:transparent; border:0; margin:0; padding:
 }
 @media (max-width:520px){ #btnSearch{display:none;} .v4fn{grid-template-columns:86px minmax(0,1fr) 84px;} .v4kpi .v{font-size:19px;} .topActions .btn{padding:8px 10px;} }
 @media (prefers-reduced-motion:reduce){ .v4side{transition:none;} }
+
+/* barra inferior de accesos rápidos (solo móvil) */
+.v4bottom{display:none;}
+@media (max-width:900px){
+  .v4bottom{display:grid; grid-template-columns:repeat(4,1fr); position:fixed; left:0; right:0; bottom:0; z-index:40; background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -6px 20px rgba(16,26,43,.08); padding:0 max(6px, env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px, env(safe-area-inset-left,0px));}
+  .v4bottom .tab{all:unset; box-sizing:border-box; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 2px 10px; font-size:12.5px; font-weight:600; color:var(--ink-soft); border-top:3px solid transparent; font-family:"IBM Plex Sans",system-ui,sans-serif;}
+  .v4bottom .tab svg{width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;}
+  .v4bottom .tab.active{color:var(--ink); border-top-color:var(--brand-orange); background:var(--brand-orange-soft);}
+  .v4bottom .tab.active svg{stroke:var(--brand-orange-dark);}
+  .shell{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px));}
+}

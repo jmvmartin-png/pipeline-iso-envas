@@ -5,6 +5,8 @@ import re, sys, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 src = (ROOT / "v3.html").read_text(encoding="utf8")  # copia íntegra de la v3 (index.html antes del cambio)
+sys.path.insert(0, str(ROOT / "build")); import hoy_movil
+src = hoy_movil.patch(src)  # «Hoy» grande y legible (17/11/2026)
 css = (ROOT / "build" / "v4_skin.css").read_text(encoding="utf8")
 addon = (ROOT / "build" / "v4_addon.js").read_text(encoding="utf8")
 out = src
@@ -86,6 +88,9 @@ header_new = f'''<div class="v4app">
   <div class="v4me"><div class="v4avatar" id="v4avatar">·</div><div style="min-width:0"><b id="v4user">Sin sesión</b><span id="v4userMail"></span></div></div>
 </aside>
 <div class="v4scrim" id="v4sideScrim" hidden></div>
+<nav class="v4bottom" aria-label="Accesos rápidos">
+  {tab('hoy','Hoy')}{tab('board','Pipeline')}{tab('list','Clientes')}{tab('panel','Panel')}
+</nav>
 <div class="v4main">
 <div class="v4topbar"><button type="button" id="v4menuBtn" aria-label="Abrir menú"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><img alt="ISO-ENVAS" src="icons/apple-touch-icon.png" style="padding:0;height:30px;border-radius:7px"><span class="tt" id="v4TopTitle">Pipeline</span><button type="button" id="v4topSearch" aria-label="Buscar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></div>
 <div class="shell">

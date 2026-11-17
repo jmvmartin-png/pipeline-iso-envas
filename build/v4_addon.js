@@ -77,7 +77,7 @@
   function closeSide(){ $("v4side").classList.remove("open"); $("v4sideScrim").hidden=true; }
 
   function wireNav(){
-    Array.prototype.forEach.call(document.querySelectorAll(".v4nav .tab"), function(t){
+    Array.prototype.forEach.call(document.querySelectorAll(".v4nav .tab, .v4bottom .tab"), function(t){
       t.addEventListener("click", function(){ setView(t.getAttribute("data-tab")); });
     });
     var mo = new MutationObserver(function(){ syncFromOrig(); });
